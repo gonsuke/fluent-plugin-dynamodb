@@ -9,7 +9,6 @@ class DynamoDBOutput < Fluent::BufferedOutput
     super
     require 'aws-sdk'
     require 'msgpack'
-    require 'zlib'
     require 'time'
     require 'uuidtools'
   end
@@ -19,7 +18,6 @@ class DynamoDBOutput < Fluent::BufferedOutput
   config_param :proxy_uri, :string, :default => nil
   config_param :dynamo_db_table, :string
   config_param :dynamo_db_endpoint, :string, :default => nil
-
   config_param :time_format, :string, :default => nil
 
   def configure(conf)
@@ -37,7 +35,16 @@ class DynamoDBOutput < Fluent::BufferedOutput
     }
     options[:proxy_uri] = @proxy_uri if @proxy_uri
 
-    restart_session(options)
+    begin
+      restart_session(options)
+      valid_table(@dynamo_db_table)
+    rescue ConfigError => e
+      $log.fatal "ConfigError: Please check your configuration, then restart fluentd. '#{e}'"
+      exit!
+    rescue Exception => e
+      $log.fatal "UnknownError: '#{e}'"
+      exit!
+    end
   end
 
   def restart_session(options)
@@ -49,13 +56,19 @@ class DynamoDBOutput < Fluent::BufferedOutput
     @dynamo_db = AWS::DynamoDB.new(options)
   end
 
+  def valid_table(table_name)
+    table = @dynamo_db.tables[table_name]
+    table.load_schema
+    raise ConfigError, "Currently composite table is not supported." if table.has_range_key?
+    @hash_key_value = table.hash_key.name
+  end
+
   def format(tag, time, record)
     [time, record].to_msgpack
   end
 
   def write(chunk)
     records = collect_records(chunk)
-    $log.warn "writing..."
     records.each {|record|
       @batch.put(@dynamo_db_table, [record])
     }
@@ -66,7 +79,7 @@ class DynamoDBOutput < Fluent::BufferedOutput
     records = []
     chunk.msgpack_each { |time, record|
       record['time'] = @timef.format(time)
-      record['id'] = UUIDTools::UUID.timestamp_create.to_s
+      record[@hash_key_value] = UUIDTools::UUID.timestamp_create.to_s
       records << record
     }
     records
