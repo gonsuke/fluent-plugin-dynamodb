@@ -64,6 +64,10 @@ class DynamoDBOutput < Fluent::BufferedOutput
   end
 
   def format(tag, time, record)
+    if !record.key?(@hash_key_value)
+      record[@hash_key_value] = UUIDTools::UUID.timestamp_create.to_s
+    end
+
     [time, record].to_msgpack
   end
 
@@ -79,7 +83,6 @@ class DynamoDBOutput < Fluent::BufferedOutput
     records = []
     chunk.msgpack_each { |time, record|
       record['time'] = @timef.format(time)
-      record[@hash_key_value] = UUIDTools::UUID.timestamp_create.to_s
       records << record
     }
     records
