@@ -77,7 +77,7 @@ For example if you read apache's access log via fluentd, structure of the table 
 
 Item can be retrieved by the key, but fluent-plugin-dynamo using UUID as a primary key.
 There is no simple way to retrieve logs you want.
-By the way, you can write scan-filter with AWS SDK like [this](https://gist.github.com/2905777), but Hive on EMR is the best practice I think.
+By the way, you can write scan-filter with AWS SDK like [this](https://gist.github.com/2906291), but Hive on EMR is the best practice I think.
 
 ###multi-region redundancy
 
