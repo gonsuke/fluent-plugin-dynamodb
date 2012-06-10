@@ -32,6 +32,33 @@ Specify table name, hash attribute name and throughput as you like. fluent-plugi
  * **dynamo\_db\_endpoint (required)** - end point of dynamodb. see  [Regions and Endpoints](http://docs.amazonwebservices.com/general/latest/gr/rande.html#ddb_region)
  * **dynamo\_db\_table (required)** - table name of dynamodb.
 
+##TIPS
+
+###multi-region redundancy
+
+As you know fluentd has **copy** output plugin.
+So you can easily setup multi-region redundancy as follows.
+
+    <match dynamo.**>
+      type copy
+      <store>
+        type dynamodb
+        aws_key_id AWS_ACCESS_KEY
+        aws_sec_key AWS_SECRET_ACCESS_KEY
+        dynamo_db_table test
+        dynamo_db_endpoint dynamodb.ap-northeast-1.amazonaws.com
+      </store>
+      <store>
+        type dynamodb
+        aws_key_id AWS_ACCESS_KEY
+        aws_sec_key AWS_SECRET_ACCESS_KEY
+        dynamo_db_table test
+        dynamo_db_endpoint dynamodb.ap-southeast-1.amazonaws.com
+      </store>
+    </match>
+
+
+
 ##TODO
 
  * auto-create table
