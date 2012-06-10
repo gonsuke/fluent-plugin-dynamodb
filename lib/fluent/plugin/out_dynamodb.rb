@@ -5,6 +5,9 @@ module Fluent
 class DynamoDBOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('dynamodb', self)
 
+  BATCHWRITE_ITEM_LIMIT = 25
+  BATCHWRITE_CONTENT_SIZE_LIMIT = 1024*1024
+
   def initialize
     super
     require 'aws-sdk'
@@ -68,21 +71,19 @@ class DynamoDBOutput < Fluent::BufferedOutput
     [time, record].to_msgpack
   end
 
-  BATCHWRITE_ITEM_LIMIT = 25
-  BATCHWRITE_CONTENT_SIZE_LIMIT = 1024*1024
-
   def write(chunk)
     records = collect_records(chunk)
     item_num = item_size = 0
     records.each {|record|
       item_num += 1
-      item_size += record.to_json.length
+      item_size += record.to_json.length # FIXME: heuristic
       if item_num >= BATCHWRITE_ITEM_LIMIT || item_size >= BATCHWRITE_CONTENT_SIZE_LIMIT
         @batch.process!
         item_num = item_size = 0
       end
       @batch.put(@dynamo_db_table, [record])
     }
+    @batch.process!
   end
 
   def collect_records(chunk)
