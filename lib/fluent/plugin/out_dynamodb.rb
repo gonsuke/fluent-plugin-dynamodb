@@ -48,9 +48,6 @@ class DynamoDBOutput < Fluent::BufferedOutput
   end
 
   def restart_session(options)
-    sts = AWS::STS.new(options)
-    session = sts.new_session(:duration => 60*60)
-    options['session_token'] = session.credentials['session_token']
     config = AWS.config(options)
     @batch = AWS::DynamoDB::BatchWrite.new(config)
     @dynamo_db = AWS::DynamoDB.new(options)
@@ -71,12 +68,21 @@ class DynamoDBOutput < Fluent::BufferedOutput
     [time, record].to_msgpack
   end
 
+  BATCHWRITE_ITEM_LIMIT = 25
+  BATCHWRITE_CONTENT_SIZE_LIMIT = 1024*1024
+
   def write(chunk)
     records = collect_records(chunk)
+    item_num = item_size = 0
     records.each {|record|
+      item_num += 1
+      item_size += record.to_json.length
+      if item_num >= BATCHWRITE_ITEM_LIMIT || item_size >= BATCHWRITE_CONTENT_SIZE_LIMIT
+        @batch.process!
+        item_num = item_size = 0
+      end
       @batch.put(@dynamo_db_table, [record])
     }
-    @batch.process!
   end
 
   def collect_records(chunk)
