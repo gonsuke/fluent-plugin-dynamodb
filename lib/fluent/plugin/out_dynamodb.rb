@@ -68,14 +68,15 @@ class DynamoDBOutput < Fluent::BufferedOutput
       record[@hash_key_value] = UUIDTools::UUID.timestamp_create.to_s
     end
 
-    [time, record].to_msgpack
+    record['time'] = @timef.format(time)
+    
+    record.to_msgpack
   end
 
   def write(chunk)
     batch_size = 0
     batch_records = []
     chunk.msgpack_each {|record|
-      record['time'] = @timef.format(time)
       batch_records << record
       batch_size += record.to_json.length # FIXME: heuristic
       if batch_records.size >= BATCHWRITE_ITEM_LIMIT || batch_size >= BATCHWRITE_CONTENT_SIZE_LIMIT
@@ -90,7 +91,7 @@ class DynamoDBOutput < Fluent::BufferedOutput
   end
 
   def batch_put_records(records)
-    @batch.put(@dynamo_db_table, batch_records)
+    @batch.put(@dynamo_db_table, records)
     @batch.process!
   end
 
