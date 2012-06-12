@@ -1,3 +1,7 @@
+Release 0.1.6 - 2012/06/12
+
+ * Optimized write(chunk) method not to collect all records in memory
+
 Release 0.1.5 - 2012/06/10
 
   * First release
