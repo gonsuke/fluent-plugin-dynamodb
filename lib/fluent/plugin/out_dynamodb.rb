@@ -5,6 +5,8 @@ module Fluent
 class DynamoDBOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('dynamodb', self)
 
+  include DetachMultiProcessMixin
+
   BATCHWRITE_ITEM_LIMIT = 25
   BATCHWRITE_CONTENT_SIZE_LIMIT = 1024*1024
 
@@ -22,6 +24,7 @@ class DynamoDBOutput < Fluent::BufferedOutput
   config_param :dynamo_db_table, :string
   config_param :dynamo_db_endpoint, :string, :default => nil
   config_param :time_format, :string, :default => nil
+  config_param :detach_process, :integer, :default => 2
 
   def configure(conf)
     super
@@ -30,7 +33,6 @@ class DynamoDBOutput < Fluent::BufferedOutput
   end
 
   def start
-    super
     options = {
       :access_key_id      => @aws_key_id,
       :secret_access_key  => @aws_sec_key,
@@ -38,15 +40,19 @@ class DynamoDBOutput < Fluent::BufferedOutput
     }
     options[:proxy_uri] = @proxy_uri if @proxy_uri
 
-    begin
-      restart_session(options)
-      valid_table(@dynamo_db_table)
-    rescue ConfigError => e
-      $log.fatal "ConfigError: Please check your configuration, then restart fluentd. '#{e}'"
-      exit!
-    rescue Exception => e
-      $log.fatal "UnknownError: '#{e}'"
-      exit!
+    detach_multi_process do
+      super
+
+      begin
+        restart_session(options)
+        valid_table(@dynamo_db_table)
+      rescue ConfigError => e
+        $log.fatal "ConfigError: Please check your configuration, then restart fluentd. '#{e}'"
+        exit!
+      rescue Exception => e
+        $log.fatal "UnknownError: '#{e}'"
+        exit!
+      end
     end
   end
 
