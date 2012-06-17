@@ -75,9 +75,23 @@ For example if you read apache's access log via fluentd, structure of the table 
   </tr>
 </table>
 
-Item can be retrieved by the key, but fluent-plugin-dynamo using UUID as a primary key.
+Item can be retrieved by the key, but fluent-plugin-dynamo uses UUID as a primary key.
 There is no simple way to retrieve logs you want.
 By the way, you can write scan-filter with AWS SDK like [this](https://gist.github.com/2906291), but Hive on EMR is the best practice I think.
+
+###multiprocessing
+
+If you need high throughput and if you have much provisioned throughput and abudant buffer, you can setup multiprocessing. fluent-plugin-dynamo inherits **DetachMultiProcessMixin**, so you can launch 6 processes as follows.
+
+    <match dynamodb.**>
+      type dynamodb
+      aws_key_id AWS_ACCESS_KEY
+      aws_sec_key AWS_SECRET_ACCESS_KEY
+      proxy_uri http://user:password@192.168.0.250:3128/
+      detach_process 6
+      dynamo_db_endpoint dynamodb.ap-northeast-1.amazonaws.com
+      dynamo_db_table access_log
+    </match>
 
 ###multi-region redundancy
 
@@ -106,7 +120,6 @@ So you can easily setup multi-region redundancy as follows.
 
  * auto-create table
  * tag_mapped
- * Multiprocessing 
 
 ##Copyright
 
