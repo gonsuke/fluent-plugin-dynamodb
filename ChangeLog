@@ -1,3 +1,7 @@
+Release 0.1.7 - 2012/06/17
+
+  * Inherits DetachMultiProcessMixin
+
 Release 0.1.6 - 2012/06/12
 
  * Optimized write(chunk) method not to collect all records in memory
