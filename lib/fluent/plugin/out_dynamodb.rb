@@ -65,8 +65,8 @@ class DynamoDBOutput < Fluent::BufferedOutput
   def valid_table(table_name)
     table = @dynamo_db.tables[table_name]
     table.load_schema
-    raise ConfigError, "Currently composite table is not supported." if table.has_range_key?
     @hash_key_value = table.hash_key.name
+    @range_key_value = table.range_key.name
   end
 
   def format(tag, time, record)
@@ -74,8 +74,12 @@ class DynamoDBOutput < Fluent::BufferedOutput
       record[@hash_key_value] = UUIDTools::UUID.timestamp_create.to_s
     end
 
-    record['time'] = @timef.format(time)
-    
+    formatted_time = @timef.format(time)
+    if @range_key_value and !record.key?(@range_key_value)
+      record[@range_key_value] = formatted_time
+    end
+    record['time'] = formatted_time
+
     record.to_msgpack
   end
 
