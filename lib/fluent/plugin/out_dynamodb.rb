@@ -65,17 +65,35 @@ class DynamoDBOutput < Fluent::BufferedOutput
   def valid_table(table_name)
     table = @dynamo_db.tables[table_name]
     table.load_schema
-    raise ConfigError, "Currently composite table is not supported." if table.has_range_key?
-    @hash_key_value = table.hash_key.name
+    @hash_key = table.hash_key
+    @range_key = table.range_key unless table.simple_key?
+  end
+
+  def match_type!(key, record)
+    if key.type == :number
+      potential_value = record[key.name].to_i
+      if potential_value == 0
+        $log.fatal "Failed attempt to cast hash_key to Integer."
+      end
+      record[key.name] = potential_value
+    end
   end
 
   def format(tag, time, record)
-    if !record.key?(@hash_key_value)
-      record[@hash_key_value] = UUIDTools::UUID.timestamp_create.to_s
+    if !record.key?(@hash_key.name)
+      record[@hash_key.name] = UUIDTools::UUID.timestamp_create.to_s
     end
+    match_type!(@hash_key, record)
 
-    record['time'] = @timef.format(time)
-    
+    formatted_time = @timef.format(time)
+    if @range_key
+      if !record.key?(@range_key.name)
+        record[@range_key.name] = formatted_time
+      end
+      match_type!(@range_key, record)
+    end
+    record['time'] = formatted_time
+
     record.to_msgpack
   end
 
