@@ -18,8 +18,8 @@ class DynamoDBOutput < Fluent::BufferedOutput
     require 'uuidtools'
   end
 
-  config_param :aws_key_id, :string
-  config_param :aws_sec_key, :string
+  config_param :aws_key_id, :string => nil, :default => nil
+  config_param :aws_sec_key, :string => nil, :default => nil
   config_param :proxy_uri, :string, :default => nil
   config_param :dynamo_db_table, :string
   config_param :dynamo_db_endpoint, :string, :default => nil
@@ -33,11 +33,9 @@ class DynamoDBOutput < Fluent::BufferedOutput
   end
 
   def start
-    options = {
-      :access_key_id      => @aws_key_id,
-      :secret_access_key  => @aws_sec_key,
-      :dynamo_db_endpoint => @dynamo_db_endpoint,
-    }
+    options[:access_key_id] = @aws_key_id if @aws_key_id
+    options[:secret_access_key] = @aws_sec_key if @aws_sec_key
+    options[:dynamo_db_endpoint] = @dynamo_db_endpoint
     options[:proxy_uri] = @proxy_uri if @proxy_uri
 
     detach_multi_process do
