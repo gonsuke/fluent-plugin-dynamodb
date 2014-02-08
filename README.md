@@ -1,4 +1,4 @@
-# Amazon DynamoDB output plugin for Fluent event collector
+# Amazon DynamoDB output plugin for [Fluentd](http://fluentd.org) event collector
 
 ##Installation
 
