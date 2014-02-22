@@ -13,7 +13,6 @@ First of all, you need to create a table in DynamoDB. It's easy to create via Ma
 
 Specify table name, hash attribute name and throughput as you like. fluent-plugin-dynamodb will load your table schema and write event-stream out to your table.
 
-*currently supports only table with a primary key which has a string hash-key. (hash and range key is not supported.)*
 
 ### Fluentd
 
@@ -26,8 +25,8 @@ Specify table name, hash attribute name and throughput as you like. fluent-plugi
       dynamo_db_table access_log
     </match>
 
- * **aws\_key\_id (required)** - AWS access key id.
- * **aws\_sec\_key (required)** - AWS secret key.
+ * **aws\_key\_id (optional)** - AWS access key id. This parameter is required when your agent is not running on EC2 instance with an IAM Instance Profile.
+ * **aws\_sec\_key (optional)** - AWS secret key. This parameter is required when your agent is not running on EC2 instance with an IAM Instance Profile.
  * **proxy_uri (optional)** - your proxy url.
  * **dynamo\_db\_endpoint (required)** - end point of dynamodb. see  [Regions and Endpoints](http://docs.amazonwebservices.com/general/latest/gr/rande.html#ddb_region)
  * **dynamo\_db\_table (required)** - table name of dynamodb.
