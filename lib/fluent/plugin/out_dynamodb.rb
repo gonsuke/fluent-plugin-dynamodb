@@ -10,6 +10,10 @@ class DynamoDBOutput < Fluent::BufferedOutput
   BATCHWRITE_ITEM_LIMIT = 25
   BATCHWRITE_CONTENT_SIZE_LIMIT = 1024*1024
 
+  unless method_defined?(:log)
+    define_method("log") { $log }
+  end
+
   def initialize
     super
     require 'aws-sdk'
@@ -25,6 +29,7 @@ class DynamoDBOutput < Fluent::BufferedOutput
   config_param :dynamo_db_endpoint, :string, :default => nil
   config_param :time_format, :string, :default => nil
   config_param :detach_process, :integer, :default => 2
+  config_param :disable_batch_write, :bool, :default => false
 
   def configure(conf)
     super
@@ -48,10 +53,10 @@ class DynamoDBOutput < Fluent::BufferedOutput
         restart_session(options)
         valid_table(@dynamo_db_table)
       rescue ConfigError => e
-        $log.fatal "ConfigError: Please check your configuration, then restart fluentd. '#{e}'"
+        log.fatal "ConfigError: Please check your configuration, then restart fluentd. '#{e}'"
         exit!
       rescue Exception => e
-        $log.fatal "UnknownError: '#{e}'"
+        log.fatal "UnknownError: '#{e}'"
         exit!
       end
     end
@@ -59,22 +64,22 @@ class DynamoDBOutput < Fluent::BufferedOutput
 
   def restart_session(options)
     config = AWS.config(options)
-    @batch = AWS::DynamoDB::BatchWrite.new(config)
+    @batch = AWS::DynamoDB::BatchWrite.new(config) unless @disable_batch_write
     @dynamo_db = AWS::DynamoDB.new(options)
   end
 
   def valid_table(table_name)
-    table = @dynamo_db.tables[table_name]
-    table.load_schema
-    @hash_key = table.hash_key
-    @range_key = table.range_key unless table.simple_key?
+    @table = @dynamo_db.tables[table_name]
+    @table.load_schema
+    @hash_key = @table.hash_key
+    @range_key = @table.range_key unless @table.simple_key?
   end
 
   def match_type!(key, record)
     if key.type == :number
       potential_value = record[key.name].to_i
       if potential_value == 0
-        $log.fatal "Failed attempt to cast hash_key to Integer."
+        log.fatal "Failed attempt to cast hash_key to Integer."
       end
       record[key.name] = potential_value
     end
@@ -99,6 +104,16 @@ class DynamoDBOutput < Fluent::BufferedOutput
   end
 
   def write(chunk)
+    if @batch
+      write_batch(chunk)
+    else
+      chunk.msgpack_each {|record|
+        put_record(record)
+      }
+    end
+  end
+
+  def write_batch(chunk)
     batch_size = 0
     batch_records = []
     chunk.msgpack_each {|record|
@@ -118,6 +133,10 @@ class DynamoDBOutput < Fluent::BufferedOutput
   def batch_put_records(records)
     @batch.put(@dynamo_db_table, records)
     @batch.process!
+  end
+
+  def put_record(record)
+    @table.items.put(record)
   end
 
 end

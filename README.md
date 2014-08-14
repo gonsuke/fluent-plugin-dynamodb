@@ -23,6 +23,7 @@ Specify table name, hash attribute name and throughput as you like. fluent-plugi
       proxy_uri http://user:password@192.168.0.250:3128/
       dynamo_db_endpoint dynamodb.ap-northeast-1.amazonaws.com
       dynamo_db_table access_log
+      disable_batch_write false
     </match>
 
  * **aws\_key\_id (optional)** - AWS access key id. This parameter is required when your agent is not running on EC2 instance with an IAM Instance Profile.
@@ -30,6 +31,7 @@ Specify table name, hash attribute name and throughput as you like. fluent-plugi
  * **proxy_uri (optional)** - your proxy url.
  * **dynamo\_db\_endpoint (required)** - end point of dynamodb. see  [Regions and Endpoints](http://docs.amazonwebservices.com/general/latest/gr/rande.html#ddb_region)
  * **dynamo\_db\_table (required)** - table name of dynamodb.
+ * **disable\_batch\_write (optional)** - do not use [BatchWriteItem](http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html). BatchWriteItem cannot update items.
 
 ##TIPS
 
@@ -122,7 +124,7 @@ So you can easily setup multi-region redundancy as follows.
 
 ##Copyright
 
-<table> 
+<table>
   <tr>
     <td>Copyright</td><td>Copyright (c) 2012- Takashi Matsuno</td>
   </tr>
