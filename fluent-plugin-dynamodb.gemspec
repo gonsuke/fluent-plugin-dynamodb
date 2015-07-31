@@ -6,6 +6,7 @@ Gem::Specification.new do |gem|
   gem.description = "Amazon DynamoDB output plugin for Fluent event collector"
   gem.homepage    = "https://github.com/gonsuke/fluent-plugin-dynamodb"
   gem.summary     = gem.description
+  gem.license     = "Apache-2.0"
   gem.version     = File.read("VERSION").strip
   gem.authors     = ["Takashi Matsuno"]
   gem.email       = "g0n5uk3@gmail.com"
