@@ -12,7 +12,7 @@ class DynamoDBOutput < Fluent::BufferedOutput
 
   def initialize
     super
-    require 'aws-sdk'
+    require 'aws-sdk-v1'
     require 'msgpack'
     require 'time'
     require 'uuidtools'
