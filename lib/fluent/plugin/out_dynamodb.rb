@@ -18,8 +18,8 @@ class DynamoDBOutput < Fluent::BufferedOutput
     require 'uuidtools'
   end
 
-  config_param :aws_key_id, :string, :default => nil
-  config_param :aws_sec_key, :string, :default => nil
+  config_param :aws_key_id, :string, :default => nil, :secret => true
+  config_param :aws_sec_key, :string, :default => nil, :secret => true
   config_param :proxy_uri, :string, :default => nil
   config_param :dynamo_db_table, :string
   config_param :dynamo_db_endpoint, :string, :default => nil
