@@ -5,6 +5,11 @@ module Fluent
 class DynamoDBOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('dynamodb', self)
 
+  # To support log_level option implemented by Fluentd v0.10.43
+  unless method_defined?(:log)
+    define_method("log") { $log }
+  end
+
   include DetachMultiProcessMixin
 
   BATCHWRITE_ITEM_LIMIT = 25
@@ -48,10 +53,10 @@ class DynamoDBOutput < Fluent::BufferedOutput
         restart_session(options)
         valid_table(@dynamo_db_table)
       rescue ConfigError => e
-        $log.fatal "ConfigError: Please check your configuration, then restart fluentd. '#{e}'"
+        log.fatal "ConfigError: Please check your configuration, then restart fluentd. '#{e}'"
         exit!
       rescue Exception => e
-        $log.fatal "UnknownError: '#{e}'"
+        log.fatal "UnknownError: '#{e}'"
         exit!
       end
     end
@@ -74,7 +79,7 @@ class DynamoDBOutput < Fluent::BufferedOutput
     if key.type == :number
       potential_value = record[key.name].to_i
       if potential_value == 0
-        $log.fatal "Failed attempt to cast hash_key to Integer."
+        log.fatal "Failed attempt to cast hash_key to Integer."
       end
       record[key.name] = potential_value
     end
