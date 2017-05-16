@@ -17,7 +17,7 @@ class DynamoDBOutput < Fluent::BufferedOutput
 
   def initialize
     super
-    require 'aws-sdk-v1'
+    require 'aws-sdk'
     require 'msgpack'
     require 'time'
     require 'uuidtools'
@@ -26,6 +26,7 @@ class DynamoDBOutput < Fluent::BufferedOutput
   config_param :aws_key_id, :string, :default => nil, :secret => true
   config_param :aws_sec_key, :string, :default => nil, :secret => true
   config_param :proxy_uri, :string, :default => nil
+  config_param :dynamo_db_region, :string, default: ENV["AWS_REGION"] || "us-east-1"
   config_param :dynamo_db_table, :string
   config_param :dynamo_db_endpoint, :string, :default => nil
   config_param :time_format, :string, :default => nil
@@ -43,7 +44,8 @@ class DynamoDBOutput < Fluent::BufferedOutput
       options[:access_key_id] = @aws_key_id
       options[:secret_access_key] = @aws_sec_key
     end
-    options[:dynamo_db_endpoint] = @dynamo_db_endpoint
+    options[:region] = @dynamo_db_region if @dynamo_db_region
+    options[:endpoint] = @dynamo_db_endpoint
     options[:proxy_uri] = @proxy_uri if @proxy_uri
 
     detach_multi_process do
@@ -63,38 +65,38 @@ class DynamoDBOutput < Fluent::BufferedOutput
   end
 
   def restart_session(options)
-    config = AWS.config(options)
-    @batch = AWS::DynamoDB::BatchWrite.new(config)
-    @dynamo_db = AWS::DynamoDB.new(options)
+    @dynamo_db = Aws::DynamoDB::Client.new(options)
+    @resource = Aws::DynamoDB::Resource.new(client: @dynamo_db)
+
   end
 
   def valid_table(table_name)
-    table = @dynamo_db.tables[table_name]
-    table.load_schema
-    @hash_key = table.hash_key
-    @range_key = table.range_key unless table.simple_key?
+    table = @resource.table(table_name)
+    @hash_key = table.key_schema.select{|e| e.key_type == "HASH" }.first
+    range_key_candidate = table.key_schema.select{|e| e.key_type == "RANGE" }
+    @range_key = range_key_candidate.first if range_key_candidate
   end
 
   def match_type!(key, record)
-    if key.type == :number
-      potential_value = record[key.name].to_i
+    if key.key_type == "NUMBER"
+      potential_value = record[key.attribute_name].to_i
       if potential_value == 0
         log.fatal "Failed attempt to cast hash_key to Integer."
       end
-      record[key.name] = potential_value
+      record[key.attribute_name] = potential_value
     end
   end
 
   def format(tag, time, record)
-    if !record.key?(@hash_key.name)
-      record[@hash_key.name] = UUIDTools::UUID.timestamp_create.to_s
+    if !record.key?(@hash_key.attribute_name)
+      record[@hash_key.attribute_name] = UUIDTools::UUID.timestamp_create.to_s
     end
     match_type!(@hash_key, record)
 
     formatted_time = @timef.format(time)
     if @range_key
-      if !record.key?(@range_key.name)
-        record[@range_key.name] = formatted_time
+      if !record.key?(@range_key.attribute_name)
+        record[@range_key.attribute_name] = formatted_time
       end
       match_type!(@range_key, record)
     end
@@ -107,7 +109,11 @@ class DynamoDBOutput < Fluent::BufferedOutput
     batch_size = 0
     batch_records = []
     chunk.msgpack_each {|record|
-      batch_records << record
+      batch_records << {
+        put_request: {
+          item: record
+        }
+      }
       batch_size += record.to_json.length # FIXME: heuristic
       if batch_records.size >= BATCHWRITE_ITEM_LIMIT || batch_size >= BATCHWRITE_CONTENT_SIZE_LIMIT
         batch_put_records(batch_records)
@@ -121,12 +127,10 @@ class DynamoDBOutput < Fluent::BufferedOutput
   end
 
   def batch_put_records(records)
-    @batch.put(@dynamo_db_table, records)
-    @batch.process!
+    @dynamo_db.batch_write_item(request_items: { @dynamo_db_table => records })
   end
 
 end
 
 
 end
-
