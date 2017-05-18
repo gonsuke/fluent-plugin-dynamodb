@@ -17,7 +17,7 @@ Specify table name, hash attribute name and throughput as you like. fluent-plugi
 ### Fluentd
 
     <match dynamodb.**>
-      type dynamodb
+      @type dynamodb
       aws_key_id AWS_ACCESS_KEY
       aws_sec_key AWS_SECRET_ACCESS_KEY
       proxy_uri http://user:password@192.168.0.250:3128/
@@ -83,7 +83,7 @@ By the way, you can write scan-filter with AWS SDK like [this](https://gist.gith
 If you need high throughput and if you have much provisioned throughput and abudant buffer, you can setup multiprocessing. fluent-plugin-dynamo inherits **DetachMultiProcessMixin**, so you can launch 6 processes as follows.
 
     <match dynamodb.**>
-      type dynamodb
+      @type dynamodb
       aws_key_id AWS_ACCESS_KEY
       aws_sec_key AWS_SECRET_ACCESS_KEY
       proxy_uri http://user:password@192.168.0.250:3128/
@@ -98,16 +98,16 @@ As you know fluentd has **copy** output plugin.
 So you can easily setup multi-region redundancy as follows.
 
     <match dynamo.**>
-      type copy
+      @type copy
       <store>
-        type dynamodb
+        @type dynamodb
         aws_key_id AWS_ACCESS_KEY
         aws_sec_key AWS_SECRET_ACCESS_KEY
         dynamo_db_table test
         dynamo_db_endpoint dynamodb.ap-northeast-1.amazonaws.com
       </store>
       <store>
-        type dynamodb
+        @type dynamodb
         aws_key_id AWS_ACCESS_KEY
         aws_sec_key AWS_SECRET_ACCESS_KEY
         dynamo_db_table test
