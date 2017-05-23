@@ -15,17 +15,8 @@ class DynamoDBOutput < Fluent::Plugin::Output
 
   DEFAULT_BUFFER_TYPE = "memory"
 
-  # To support log_level option implemented by Fluentd v0.10.43
-  unless method_defined?(:log)
-    define_method("log") { $log }
-  end
-
   BATCHWRITE_ITEM_LIMIT = 25
   BATCHWRITE_CONTENT_SIZE_LIMIT = 1024*1024
-
-  def initialize
-    super
-  end
 
   config_param :aws_key_id, :string, :default => nil, :secret => true
   config_param :aws_sec_key, :string, :default => nil, :secret => true
