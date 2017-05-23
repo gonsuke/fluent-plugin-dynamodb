@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 require 'fluent/plugin/output'
+require 'aws-sdk'
+require 'msgpack'
+require 'time'
+require 'uuidtools'
+
 module Fluent::Plugin
 
 
@@ -20,10 +25,6 @@ class DynamoDBOutput < Fluent::Plugin::Output
 
   def initialize
     super
-    require 'aws-sdk'
-    require 'msgpack'
-    require 'time'
-    require 'uuidtools'
   end
 
   config_param :aws_key_id, :string, :default => nil, :secret => true
