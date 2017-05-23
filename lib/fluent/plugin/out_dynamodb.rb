@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
-module Fluent
+require 'fluent/plugin/output'
+module Fluent::Plugin
 
 
-class DynamoDBOutput < Fluent::BufferedOutput
+class DynamoDBOutput < Fluent::Plugin::Output
   Fluent::Plugin.register_output('dynamodb', self)
+
+  helpers :compat_parameters
+
+  DEFAULT_BUFFER_TYPE = "memory"
 
   # To support log_level option implemented by Fluentd v0.10.43
   unless method_defined?(:log)
     define_method("log") { $log }
   end
-
-  include DetachMultiProcessMixin
 
   BATCHWRITE_ITEM_LIMIT = 25
   BATCHWRITE_CONTENT_SIZE_LIMIT = 1024*1024
@@ -32,10 +35,15 @@ class DynamoDBOutput < Fluent::BufferedOutput
   config_param :time_format, :string, :default => nil
   config_param :detach_process, :integer, :default => 2
 
+  config_section :buffer do
+    config_set_default :@type, DEFAULT_BUFFER_TYPE
+    config_set_default :chunk_keys, ['tag']
+  end
+
   def configure(conf)
     super
 
-    @timef = TimeFormatter.new(@time_format, @localtime)
+    @timef = Fluent::TimeFormatter.new(@time_format, @localtime)
   end
 
   def start
@@ -48,19 +56,17 @@ class DynamoDBOutput < Fluent::BufferedOutput
     options[:endpoint] = @dynamo_db_endpoint
     options[:proxy_uri] = @proxy_uri if @proxy_uri
 
-    detach_multi_process do
-      super
+    super
 
-      begin
-        restart_session(options)
-        valid_table(@dynamo_db_table)
-      rescue ConfigError => e
-        log.fatal "ConfigError: Please check your configuration, then restart fluentd. '#{e}'"
-        exit!
-      rescue Exception => e
-        log.fatal "UnknownError: '#{e}'"
-        exit!
-      end
+    begin
+      restart_session(options)
+      valid_table(@dynamo_db_table)
+    rescue Fluent::ConfigError => e
+      log.fatal "ConfigError: Please check your configuration, then restart fluentd. '#{e}'"
+      exit!
+    rescue Exception => e
+      log.fatal "UnknownError: '#{e}'"
+      exit!
     end
   end
 
@@ -103,6 +109,14 @@ class DynamoDBOutput < Fluent::BufferedOutput
     record['time'] = formatted_time
 
     record.to_msgpack
+  end
+
+  def formatted_to_msgpack_binary?
+    true
+  end
+
+  def multi_workers_ready?
+    true
   end
 
   def write(chunk)
