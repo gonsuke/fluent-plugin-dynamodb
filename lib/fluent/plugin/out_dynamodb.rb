@@ -32,6 +32,7 @@ class DynamoDBOutput < Fluent::Plugin::Output
   end
 
   def configure(conf)
+    compat_parameters_convert(conf, :buffer)
     super
 
     @timef = Fluent::TimeFormatter.new(@time_format, @localtime)
