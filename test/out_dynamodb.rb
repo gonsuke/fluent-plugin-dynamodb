@@ -1,7 +1,11 @@
 require 'fluent/test'
+require 'fluent/test/helpers'
+require 'fluent/test/driver/output'
 require 'fluent/plugin/out_dynamodb'
 
 class DynamoDBOutputTest < Test::Unit::TestCase
+  include Fluent::Test::Helpers
+
   def setup
     Fluent::Test.setup
   end
@@ -16,7 +20,7 @@ class DynamoDBOutputTest < Test::Unit::TestCase
   ]
 
   def create_driver(conf = CONFIG)
-    Fluent::Test::BufferedOutputTestDriver.new(Fluent::DynamoDBOutput) do
+    Fluent::Test::Driver::Output.new(Fluent::Plugin::DynamoDBOutput) do
       def write(chunk)
         chunk.read
       end
@@ -34,24 +38,26 @@ class DynamoDBOutputTest < Test::Unit::TestCase
   def test_format
     d = create_driver
 
-    time = Time.parse("2011-01-02 13:14:15 UTC").to_i
-    d.emit({"a"=>1}, time)
-    d.emit({"a"=>2}, time)
+    time = event_time("2011-01-02 13:14:15 UTC")
+    d.run(default_tag: 'test') do
+      d.feed(time, {"a"=>1})
+      d.feed(time, {"a"=>2})
+    end
 
-    d.expect_format([time, {'a' => 1}].to_msgpack)
-    d.expect_format([time, {'a' => 2}].to_msgpack)
-
-    d.run
+    expected = [{'a' => 1}].to_msgpack + [{'a' => 2}].to_msgpack
+    assert_equal expected, d.formatted
   end
 
   def test_write
     d = create_driver
 
-    time = Time.parse("2011-01-02 13:14:15 UTC").to_i
-    d.emit({"a"=>1}, time)
-    d.emit({"a"=>2}, time)
+    time = event_time("2011-01-02 13:14:15 UTC")
+    d.run(default_tag: 'test') do
+      d.feed(time, {"a"=>1})
+      d.feed(time, {"a"=>2})
+    end
 
-    data = d.run
+    data = d.events
 
     assert_equal [time, {'a' => 1}].to_msgpack + [time, {'a' => 2}].to_msgpack, data
   end

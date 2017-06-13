@@ -80,17 +80,19 @@ By the way, you can write scan-filter with AWS SDK like [this](https://gist.gith
 
 ###multiprocessing
 
-If you need high throughput and if you have much provisioned throughput and abudant buffer, you can setup multiprocessing. fluent-plugin-dynamo inherits **DetachMultiProcessMixin**, so you can launch 6 processes as follows.
+If you need high throughput and if you have much provisioned throughput and abudant buffer, you can setup multiprocessing. fluent-plugin-dynamodb uses **multi workers**, so you can launch 6 workers as follows.
 
     <match dynamodb.**>
       @type dynamodb
       aws_key_id AWS_ACCESS_KEY
       aws_sec_key AWS_SECRET_ACCESS_KEY
       proxy_uri http://user:password@192.168.0.250:3128/
-      detach_process 6
       dynamo_db_endpoint dynamodb.ap-northeast-1.amazonaws.com
       dynamo_db_table access_log
     </match>
+    <system>
+      workers 6
+    </system>
 
 ###multi-region redundancy
 
