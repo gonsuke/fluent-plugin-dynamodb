@@ -1,13 +1,13 @@
 # Amazon DynamoDB output plugin for [Fluentd](http://fluentd.org) event collector
 
-##Installation
+## Installation
 
     $ fluent-gem install fluent-plugin-dynamodb
 
-##Configuration
+## Configuration
 
 
-###DynamoDB
+### DynamoDB
 
 First of all, you need to create a table in DynamoDB. It's easy to create via Management Console.
 
@@ -31,9 +31,9 @@ Specify table name, hash attribute name and throughput as you like. fluent-plugi
  * **dynamo\_db\_endpoint (required)** - end point of dynamodb. see  [Regions and Endpoints](http://docs.amazonwebservices.com/general/latest/gr/rande.html#ddb_region)
  * **dynamo\_db\_table (required)** - table name of dynamodb.
 
-##TIPS
+## TIPS
 
-###retrieving data
+### retrieving data
 
 fluent-plugin-dynamo will add **time** attribute and any other attributes of record automatically.
 For example if you read apache's access log via fluentd, structure of the table will have been like this.
@@ -78,7 +78,7 @@ Item can be retrieved by the key, but fluent-plugin-dynamo uses UUID as a primar
 There is no simple way to retrieve logs you want.
 By the way, you can write scan-filter with AWS SDK like [this](https://gist.github.com/2906291), but Hive on EMR is the best practice I think.
 
-###multiprocessing
+### multiprocessing
 
 If you need high throughput and if you have much provisioned throughput and abudant buffer, you can setup multiprocessing. fluent-plugin-dynamodb uses **multi workers**, so you can launch 6 workers as follows.
 
@@ -94,7 +94,7 @@ If you need high throughput and if you have much provisioned throughput and abud
       workers 6
     </system>
 
-###multi-region redundancy
+### multi-region redundancy
 
 As you know fluentd has **copy** output plugin.
 So you can easily setup multi-region redundancy as follows.
@@ -117,12 +117,12 @@ So you can easily setup multi-region redundancy as follows.
       </store>
     </match>
 
-##TODO
+## TODO
 
  * auto-create table
  * tag_mapped
 
-##Copyright
+## Copyright
 
 <table> 
   <tr>
