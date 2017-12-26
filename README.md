@@ -21,7 +21,7 @@ Specify table name, hash attribute name and throughput as you like. fluent-plugi
       aws_key_id AWS_ACCESS_KEY
       aws_sec_key AWS_SECRET_ACCESS_KEY
       proxy_uri http://user:password@192.168.0.250:3128/
-      dynamo_db_endpoint dynamodb.ap-northeast-1.amazonaws.com
+      dynamo_db_endpoint https://dynamodb.ap-northeast-1.amazonaws.com
       dynamo_db_table access_log
     </match>
 
@@ -87,7 +87,7 @@ If you need high throughput and if you have much provisioned throughput and abud
       aws_key_id AWS_ACCESS_KEY
       aws_sec_key AWS_SECRET_ACCESS_KEY
       proxy_uri http://user:password@192.168.0.250:3128/
-      dynamo_db_endpoint dynamodb.ap-northeast-1.amazonaws.com
+      dynamo_db_endpoint https://dynamodb.ap-northeast-1.amazonaws.com
       dynamo_db_table access_log
     </match>
     <system>
@@ -106,14 +106,14 @@ So you can easily setup multi-region redundancy as follows.
         aws_key_id AWS_ACCESS_KEY
         aws_sec_key AWS_SECRET_ACCESS_KEY
         dynamo_db_table test
-        dynamo_db_endpoint dynamodb.ap-northeast-1.amazonaws.com
+        dynamo_db_endpoint https://dynamodb.ap-northeast-1.amazonaws.com
       </store>
       <store>
         @type dynamodb
         aws_key_id AWS_ACCESS_KEY
         aws_sec_key AWS_SECRET_ACCESS_KEY
         dynamo_db_table test
-        dynamo_db_endpoint dynamodb.ap-southeast-1.amazonaws.com
+        dynamo_db_endpoint https://dynamodb.ap-southeast-1.amazonaws.com
       </store>
     </match>
 
