@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 require 'fluent/plugin/output'
-require 'aws-sdk'
+require 'aws-sdk-dynamodb'
 require 'msgpack'
 require 'time'
 require 'uuidtools'
